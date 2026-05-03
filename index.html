@@ -1995,7 +1995,7 @@ function renderDash() {
   // NOVOS CARDS
 const totalReceitas = state.receitas.reduce((s, r) => s + r.valor, 0);
 const totalDespesas = state.despesas.reduce((s, d) => s + d.valor, 0);
-const saldo = totalReceitas - totalDespesas - valesTotal;
+const saldo = totalReceitas - totalDespesas;
 
 document.getElementById('dash-receitas').textContent = fmt(totalReceitas);
 document.getElementById('dash-despesas').textContent = fmt(totalDespesas);  // NOVO
