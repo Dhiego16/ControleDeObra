@@ -1382,6 +1382,18 @@ body.light {
         <div style="font-size:11px; color:var(--text-dim); margin-top:10px;">Exporte regularmente para não perder os dados.</div>
       </div>
 
+       <!-- Botão de Forçar Atualização -->
+<div class="card card-accent" style="margin-bottom:16px;">
+  <div style="font-size:13px; font-weight:700; margin-bottom:12px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">🚀 Atualizações</div>
+  <div class="btn-row">
+    <button class="btn btn-primary" id="force-update-btn" onclick="forceAppUpdate()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      Verificar e Instalar Atualizações
+    </button>
+  </div>
+  <div style="font-size:11px; color:var(--text-dim); margin-top:10px;">Clique para buscar a versão mais recente do aplicativo.</div>
+</div>
+
       <!-- Histórico -->
       <div style="font-size:13px; font-weight:700; margin-bottom:12px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">📋 Histórico de Fechamentos</div>
       <div id="hist-list"></div>
@@ -1804,6 +1816,34 @@ let state = {
   fechaWeekOffset: 0,
   lightTheme: localStorage.getItem('pontoobra_theme') === 'light',
 };
+
+async function forceAppUpdate() {
+    toast('Verificando por atualizações...', 'info');
+    try {
+        // 1. Limpa todos os caches antigos
+        if ('caches' in window) {
+            const keys = await caches.keys();
+            await Promise.all(keys.map(key => caches.delete(key)));
+            console.log('🗑️ Cache storage limpo.');
+        }
+
+        // 2. Remove o Service Worker antigo
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map(reg => reg.unregister()));
+        console.log('👷‍♂️ Service Worker antigo desativado.');
+
+        // 3. Pequeno delay para garantir que a limpeza terminou
+        setTimeout(() => {
+            toast('Atualização concluída! Recarregando...', 'success');
+            // 4. Recarrega a página com um parâmetro para quebrar o cache do navegador
+            window.location.href = window.location.href.split('?')[0] + '?v=' + Date.now();
+        }, 500);
+
+    } catch (err) {
+        console.error('Erro durante a atualização:', err);
+        toast('Erro ao tentar atualizar. Tente reinstalar o app.', 'error');
+    }
+}
 
 // ============================================
 // PERSISTÊNCIA
