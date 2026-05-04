@@ -662,7 +662,7 @@ body.light {
           </div>
           <div class="mes-banner-item">
             <div class="mes-banner-val" style="color:var(--blue);" id="dash-mes-pago">R$0</div>
-            <div class="mes-banner-label">Pago</div>
+            <div class="mes-banner-label">Total Saída</div>
           </div>
         </div>
       </div>
@@ -2151,21 +2151,39 @@ function renderResumoMensal() {
   const nomeMes = now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
   document.getElementById('dash-mes-nome').textContent = nomeMes;
 
-  const mesReceitas = state.receitas.filter(r => r.data && r.data.startsWith(mesAtual)).reduce((s, r) => s + r.valor, 0);
-  const mesDespesas = state.despesas.filter(d => d.data && d.data.startsWith(mesAtual)).reduce((s, d) => s + d.valor, 0);
-  const mesVales = state.vales.filter(v => v.data && v.data.startsWith(mesAtual)).reduce((s, v) => s + v.valor, 0);
-  // Mão de obra do mês = pontos do mês
-  const mesMaoObra = state.pontos.filter(p => p.data && p.data.startsWith(mesAtual)).reduce((s, p) => s + (p.valor || 0), 0);
-  // Pago no mês = fechamentos pagos no mês
-  const mesPago = state.fechamentos.filter(h => h.pagoEm && h.pagoEm.startsWith(mesAtual) && h.status === 'pago').reduce((s, h) => s + (h.valorFinal || 0), 0);
-  const mesSaldo = mesReceitas - mesDespesas - mesPago;
+  // Receitas do mês
+  const mesReceitas = state.receitas
+    .filter(r => r.data && r.data.startsWith(mesAtual))
+    .reduce((s, r) => s + r.valor, 0);
+
+  // Despesas diretas do mês (material, combustível, etc.)
+  const mesDespesas = state.despesas
+    .filter(d => d.data && d.data.startsWith(mesAtual))
+    .reduce((s, d) => s + d.valor, 0);
+
+  // Mão de obra paga no mês = fechamentos com pagoEm no mês atual
+  // É uma despesa de pessoal, não separada
+  const mesMaoObra = state.fechamentos
+    .filter(h => h.pagoEm && h.pagoEm.startsWith(mesAtual) && h.status === 'pago')
+    .reduce((s, h) => s + (h.valorFinal || 0), 0);
+
+  // Vales do mês (já estão descontados dentro da mão de obra paga)
+  const mesVales = state.vales
+    .filter(v => v.data && v.data.startsWith(mesAtual))
+    .reduce((s, v) => s + v.valor, 0);
+
+  // Saldo = Receitas − Despesas − Mão de Obra (pessoal)
+  const mesSaldo = mesReceitas - mesDespesas - mesMaoObra;
 
   document.getElementById('dash-mes-receitas').textContent = fmtShort(mesReceitas);
   document.getElementById('dash-mes-despesas').textContent = fmtShort(mesDespesas);
   document.getElementById('dash-mes-lucro').textContent = fmtShort(mesSaldo);
   document.getElementById('dash-mes-mao').textContent = fmtShort(mesMaoObra);
   document.getElementById('dash-mes-vales').textContent = fmtShort(mesVales);
-  document.getElementById('dash-mes-pago').textContent = fmtShort(mesPago);
+
+  // Total saída = despesas + mão de obra
+  const totalSaida = mesDespesas + mesMaoObra;
+  document.getElementById('dash-mes-pago').textContent = fmtShort(totalSaida);
 
   // Cor do saldo
   const saldoEl = document.getElementById('dash-mes-lucro');
