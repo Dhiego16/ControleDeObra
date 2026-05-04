@@ -992,12 +992,13 @@ function fmt(val) { return 'R$ ' + Number(val || 0).toLocaleString('pt-BR', { mi
 function fmtDate(d) { if (!d) return ''; const [y, m, dd] = d.split('-'); return `${dd}/${m}/${y}`; }
 function getInitials(name) { return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase(); }
 function today() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
-// FIX: semana começa na segunda-feira (padrão brasileiro)
+// Semana de DOMINGO a SÁBADO
+// Compatível com pagamento aos sábados:
+// Vale no domingo já cai na semana nova, não desconta do pagamento anterior.
 function getWeekStart(offset = 0) {
   const d = new Date();
-  const day = d.getDay(); // 0=dom, 1=seg...
-  const diffToMonday = (day === 0) ? -6 : 1 - day;
-  d.setDate(d.getDate() + diffToMonday + (offset * 7));
+  const day = d.getDay(); // 0=dom, 1=seg... 6=sab
+  d.setDate(d.getDate() - day + (offset * 7)); // recua até domingo
   d.setHours(0, 0, 0, 0);
   return d;
 }
@@ -1012,9 +1013,11 @@ function toYMD(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart
 function weekLabel(offset) {
   const { start, end } = getWeekDates(offset);
   const opts = { day: '2-digit', month: '2-digit' };
-  if (offset === 0) return `Esta semana • ${start.toLocaleDateString('pt-BR', opts)} – ${end.toLocaleDateString('pt-BR', opts)}`;
-  if (offset === -1) return `Semana passada • ${start.toLocaleDateString('pt-BR', opts)} – ${end.toLocaleDateString('pt-BR', opts)}`;
-  return `${start.toLocaleDateString('pt-BR', opts)} – ${end.toLocaleDateString('pt-BR', opts)}`;
+  // start = domingo, end = sábado
+  const label = `Dom ${start.toLocaleDateString('pt-BR', opts)} – Sáb ${end.toLocaleDateString('pt-BR', opts)}`;
+  if (offset === 0) return `Esta semana • ${label}`;
+  if (offset === -1) return `Semana passada • ${label}`;
+  return label;
 }
 function inWeek(dateStr, offset) {
   const { start, end } = getWeekDates(offset);
