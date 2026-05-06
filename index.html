@@ -1776,23 +1776,51 @@ function renderReceitas() {
 // EMPRESA
 // ============================================
 const EMPRESA = { logo: 'logo.png', nome: 'Construtora Maria Constrular L.T.D.A' };
-function loadEmpresaConfig() {
-  const emp = JSON.parse(localStorage.getItem('pontoobra_empresa') || '{}');
-  document.getElementById('cfg-empresa-nome').value = emp.nome || EMPRESA.nome || '';
-  document.getElementById('cfg-empresa-cnpj').value = emp.cnpj || '';
-  document.getElementById('cfg-empresa-tel').value = emp.telefone || '';
-  document.getElementById('cfg-empresa-end').value = emp.endereco || '';
+
+async function loadEmpresaConfig() {
+  try {
+    const doc = await db.collection('config').doc('empresa').get();
+    const emp = doc.exists ? doc.data() : {};
+    document.getElementById('cfg-empresa-nome').value = emp.nome || EMPRESA.nome || '';
+    document.getElementById('cfg-empresa-cnpj').value = emp.cnpj || '';
+    document.getElementById('cfg-empresa-tel').value = emp.telefone || '';
+    document.getElementById('cfg-empresa-end').value = emp.endereco || '';
+    // Atualiza objeto local para uso no PDF
+    if (emp.nome) EMPRESA.nome = emp.nome;
+    if (emp.cnpj) EMPRESA.cnpj = emp.cnpj;
+    if (emp.telefone) EMPRESA.telefone = emp.telefone;
+    if (emp.endereco) EMPRESA.endereco = emp.endereco;
+  } catch (err) {
+    console.error('Erro ao carregar config empresa:', err);
+    // Fallback para localStorage se Firebase falhar
+    const emp = JSON.parse(localStorage.getItem('pontoobra_empresa') || '{}');
+    document.getElementById('cfg-empresa-nome').value = emp.nome || EMPRESA.nome || '';
+    document.getElementById('cfg-empresa-cnpj').value = emp.cnpj || '';
+    document.getElementById('cfg-empresa-tel').value = emp.telefone || '';
+    document.getElementById('cfg-empresa-end').value = emp.endereco || '';
+  }
 }
-function salvarEmpresa() {
+
+async function salvarEmpresa() {
   const emp = {
     nome: document.getElementById('cfg-empresa-nome').value.trim(),
     cnpj: document.getElementById('cfg-empresa-cnpj').value.trim(),
     telefone: document.getElementById('cfg-empresa-tel').value.trim(),
     endereco: document.getElementById('cfg-empresa-end').value.trim()
   };
-  localStorage.setItem('pontoobra_empresa', JSON.stringify(emp));
-  EMPRESA.nome = emp.nome || EMPRESA.nome;
-  toast('Dados da empresa salvos!', 'success');
+  try {
+    await db.collection('config').doc('empresa').set(emp, { merge: true });
+    // Mantém localStorage como backup local
+    localStorage.setItem('pontoobra_empresa', JSON.stringify(emp));
+    EMPRESA.nome = emp.nome || EMPRESA.nome;
+    EMPRESA.cnpj = emp.cnpj;
+    EMPRESA.telefone = emp.telefone;
+    EMPRESA.endereco = emp.endereco;
+    toast('Dados da empresa salvos!', 'success');
+  } catch (err) {
+    console.error(err);
+    toast('Erro ao salvar dados da empresa', 'error');
+  }
 }
 
 // ============================================
@@ -2015,12 +2043,12 @@ function gerarPDF(funcId) {
   const f = getFunc(funcId);
   const calc = calcFechamento(funcId, state.fechaWeekOffset);
   const { start, end } = getWeekDates(state.fechaWeekOffset);
-  const emp = JSON.parse(localStorage.getItem('pontoobra_empresa') || '{}');
-  const nomeEmp = emp.nome || EMPRESA.nome;
+  // Usa dados do objeto EMPRESA que já foi populado pelo loadEmpresaConfig
+  const nomeEmp = EMPRESA.nome || 'Construtora';
   const content = `<div style="font-family: Arial, sans-serif; padding: 24px; max-width: 520px; margin: 0 auto;">
     <div style="display:flex; align-items:center; gap:18px; margin-bottom:20px;">
       <img src="${EMPRESA.logo}" alt="Logo" style="height:70px; width:auto; object-fit:contain;" onerror="this.style.display='none'">
-      <div><div style="font-size:17px; font-weight:900;">${nomeEmp}</div>${emp.cnpj ? '<div style="font-size:12px;color:#555;">'+emp.cnpj+'</div>' : ''}${emp.telefone ? '<div style="font-size:12px;color:#555;">'+emp.telefone+'</div>' : ''}${emp.endereco ? '<div style="font-size:12px;color:#555;">'+emp.endereco+'</div>' : ''}</div>
+      <div><div style="font-size:17px; font-weight:900;">${nomeEmp}</div>${EMPRESA.cnpj ? '<div style="font-size:12px;color:#555;">'+EMPRESA.cnpj+'</div>' : ''}${EMPRESA.telefone ? '<div style="font-size:12px;color:#555;">'+EMPRESA.telefone+'</div>' : ''}${EMPRESA.endereco ? '<div style="font-size:12px;color:#555;">'+EMPRESA.endereco+'</div>' : ''}</div>
     </div>
     <div style="background:#F5C400; height:3px; border-radius:2px; margin-bottom:18px;"></div>
     <div style="text-align:center; margin-bottom:20px;"><div style="font-size:15px; font-weight:700; color:#333; text-transform:uppercase;">Recibo de Pagamento Semanal</div></div>
@@ -2312,8 +2340,7 @@ function renderHistoricoFunc() {
 // ============================================
 function gerarPDFGeral() {
   const { start, end } = getWeekDates(state.fechaWeekOffset);
-  const emp = JSON.parse(localStorage.getItem('pontoobra_empresa') || '{}');
-  const nomeEmp = emp.nome || EMPRESA.nome;
+  const nomeEmp = EMPRESA.nome || 'Construtora';
   const ativos = state.funcionarios.filter(f => f.status === 'ativo');
 
   let totalGeralBruto = 0, totalGeralVales = 0, totalGeralLiquido = 0;
@@ -2354,7 +2381,7 @@ function gerarPDFGeral() {
   </head><body>
   <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
     <img src="${EMPRESA.logo}" style="height:60px;object-fit:contain;" onerror="this.style.display='none'">
-    <div><div style="font-size:18px;font-weight:900;">${nomeEmp}</div>${emp.cnpj?'<div style="font-size:12px;color:#555;">'+emp.cnpj+'</div>':''}</div>
+    <div><div style="font-size:18px;font-weight:900;">${nomeEmp}</div>${EMPRESA.cnpj?'<div style="font-size:12px;color:#555;">'+EMPRESA.cnpj+'</div>':''}</div>
   </div>
   <div style="background:#F5C400;height:3px;border-radius:2px;margin-bottom:16px;"></div>
   <div style="text-align:center;margin-bottom:20px;">
@@ -2515,6 +2542,7 @@ async function init() {
     renderDash();
     updatePontoWeekLabel();
     updateFechaWeekLabel();
+    await loadEmpresaConfig(); // carrega empresa do Firebase no boot
     initInstallBanner();
     initNotificacoes();
   }
