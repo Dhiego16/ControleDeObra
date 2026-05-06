@@ -387,7 +387,6 @@ select.form-control {
 .modal-body { padding: 0 16px; }
 .modal-footer { padding: 16px 16px 0; }
 
-/* ── CONFIRM DIALOG CUSTOMIZADO (substitui confirm() nativo) ── */
 #confirm-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,0.8);
   z-index: 500; display: flex; align-items: center; justify-content: center;
@@ -495,7 +494,6 @@ body.light {
 
 @media print { #nav, #header, .fab, .btn-row { display: none !important; } body { background: white; color: black; } .fechamento-card { border: 1px solid #ccc; } }
 
-/* ── RESUMO MENSAL ── */
 .mes-banner {
   background: linear-gradient(135deg, rgba(58,159,232,0.1), rgba(58,159,232,0.03));
   border: 1px solid rgba(58,159,232,0.2); border-radius: var(--radius);
@@ -507,7 +505,6 @@ body.light {
 .mes-banner-label { font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
 .mes-banner-val { font-family: var(--font-display); font-size: 18px; font-weight: 700; margin-top: 2px; }
 
-/* ── FILTRO PERÍODO ── */
 .periodo-filter { display: flex; gap: 8px; margin-bottom: 14px; align-items: center; }
 .periodo-filter input[type="month"] {
   flex: 1; background: var(--card2); border: 1px solid var(--border);
@@ -516,7 +513,6 @@ body.light {
 }
 .periodo-filter input[type="month"]:focus { outline: none; border-color: var(--yellow); }
 
-/* ── MODAL HISTÓRICO FUNCIONÁRIO ── */
 .hist-func-stat { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 16px; }
 .hist-func-stat-item { background: var(--card2); border-radius: var(--radius-sm); padding: 10px; text-align: center; border: 1px solid var(--border); }
 .hist-func-stat-val { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--yellow); }
@@ -524,10 +520,8 @@ body.light {
 .hist-func-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
 .hist-func-row:last-child { border-bottom: none; }
 
-/* ── NOTIF BADGE ── */
 .notif-dot { position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; border-radius: 50%; background: var(--red); border: 2px solid var(--dark); }
 
-/* ── PDF GERAL ── */
 .pdf-geral-btn {
   background: linear-gradient(135deg, rgba(245,196,0,0.15), rgba(245,196,0,0.05));
   border: 1px solid rgba(245,196,0,0.3); border-radius: var(--radius);
@@ -552,6 +546,7 @@ body.light {
 #install-banner-text { flex: 1; min-width: 0; }
 #install-banner-title { font-weight: 700; font-size: 14px; color: var(--text); }
 #install-banner-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
 /* ── OBRAS ── */
 #obra-selector {
   height: var(--header-h);
@@ -716,7 +711,6 @@ body.light {
           <div class="dash-value" style="color: var(--yellow);" id="dash-saldo">R$ 0</div>
         </div>
       </div>
-      <!-- RESUMO MENSAL -->
       <div class="mes-banner">
         <div class="mes-banner-title">📅 Resumo de <span id="dash-mes-nome">...</span></div>
         <div class="mes-banner-grid">
@@ -971,7 +965,83 @@ body.light {
   </div>
 </div>
 
-<!-- MODAIS -->
+<!-- ============================================ -->
+<!-- MODAIS                                       -->
+<!-- ============================================ -->
+
+<!-- Modal: Seletor de Obras -->
+<div class="modal-overlay" id="modal-obras">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <span class="modal-title">Selecionar Obra</span>
+      <button class="modal-close" onclick="closeModal('modal-obras')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div id="obras-list"></div>
+      <div style="margin-top:12px;">
+        <button class="btn btn-primary" onclick="abrirNovaObra()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Nova Obra
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Cadastro / Edição de Obra -->
+<div class="modal-overlay" id="modal-obra-form">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <span class="modal-title" id="modal-obra-form-title">Nova Obra</span>
+      <button class="modal-close" onclick="closeModal('modal-obra-form')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="obra-id">
+      <div class="form-group">
+        <label class="form-label">Nome da Obra *</label>
+        <input class="form-control" id="obra-nome" placeholder="Ex: Residência João, Galpão Setor X..." autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Endereço</label>
+        <input class="form-control" id="obra-end" placeholder="Rua, número – Bairro" autocomplete="off">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Ícone</label>
+          <select class="form-control" id="obra-emoji">
+            <option value="🏠">🏠 Residencial</option>
+            <option value="🏢">🏢 Comercial</option>
+            <option value="🏭">🏭 Industrial</option>
+            <option value="🔧">🔧 Reforma</option>
+            <option value="🏗️">🏗️ Construção</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select class="form-control" id="obra-status">
+            <option value="ativa">✅ Ativa</option>
+            <option value="pausada">⏸️ Pausada</option>
+            <option value="concluida">✔️ Concluída</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" id="btn-save-obra" onclick="saveObra()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Salvar Obra
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Funcionário -->
 <div class="modal-overlay" id="modal-func">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -990,6 +1060,7 @@ body.light {
   </div>
 </div>
 
+<!-- Modal: Ponto -->
 <div class="modal-overlay" id="modal-ponto">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -1008,6 +1079,7 @@ body.light {
   </div>
 </div>
 
+<!-- Modal: Vale -->
 <div class="modal-overlay" id="modal-vale">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -1025,6 +1097,7 @@ body.light {
   </div>
 </div>
 
+<!-- Modal: Despesa -->
 <div class="modal-overlay" id="modal-desp">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -1043,6 +1116,7 @@ body.light {
   </div>
 </div>
 
+<!-- Modal: Receita -->
 <div class="modal-overlay" id="modal-receita">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -1061,6 +1135,7 @@ body.light {
   </div>
 </div>
 
+<!-- Modal: FAB -->
 <div class="modal-overlay" id="modal-fab">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -1128,21 +1203,16 @@ const db = firebase.firestore();
 db.enablePersistence().catch(err => { if (err.code !== 'failed-precondition') console.error(err); });
 
 // ============================================
-// DB — OPERAÇÕES ATÔMICAS (FIX PRINCIPAL)
-// Cada item é salvo/deletado individualmente.
-// NÃO apaga mais a coleção toda a cada save.
+// DB — OPERAÇÕES ATÔMICAS
 // ============================================
 const DB = {
-  // Carrega todos os docs de uma coleção
   getAll: async (colecao) => {
     const snapshot = await db.collection(colecao).get();
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   },
-  // Salva ou atualiza UM documento
   upsert: async (colecao, id, data) => {
     await db.collection(colecao).doc(id).set(data, { merge: true });
   },
-  // Remove UM documento
   remove: async (colecao, id) => {
     await db.collection(colecao).doc(id).delete();
   }
@@ -1152,6 +1222,7 @@ const DB = {
 // STATE
 // ============================================
 let state = {
+  obras: [],
   funcionarios: [],
   pontos: [],
   vales: [],
@@ -1165,16 +1236,8 @@ let state = {
   lightTheme: localStorage.getItem('pontoobra_theme') === 'light',
 };
 
-// ============================================
-// BOTÃO DE SALVAR — desabilita durante await
-// Evita duplo clique e indica carregamento
-// ============================================
-function setSaving(btnId, saving) {
-  const btn = document.getElementById(btnId);
-  if (!btn) return;
-  btn.disabled = saving;
-  btn.style.opacity = saving ? '0.6' : '';
-}
+// ID da obra atualmente selecionada
+let obraAtualId = localStorage.getItem('obra_atual_id') || null;
 
 // ============================================
 // UTILS
@@ -1184,13 +1247,10 @@ function fmt(val) { return 'R$ ' + Number(val || 0).toLocaleString('pt-BR', { mi
 function fmtDate(d) { if (!d) return ''; const [y, m, dd] = d.split('-'); return `${dd}/${m}/${y}`; }
 function getInitials(name) { return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase(); }
 function today() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
-// Semana de DOMINGO a SÁBADO
-// Compatível com pagamento aos sábados:
-// Vale no domingo já cai na semana nova, não desconta do pagamento anterior.
 function getWeekStart(offset = 0) {
   const d = new Date();
-  const day = d.getDay(); // 0=dom, 1=seg... 6=sab
-  d.setDate(d.getDate() - day + (offset * 7)); // recua até domingo
+  const day = d.getDay();
+  d.setDate(d.getDate() - day + (offset * 7));
   d.setHours(0, 0, 0, 0);
   return d;
 }
@@ -1205,7 +1265,6 @@ function toYMD(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart
 function weekLabel(offset) {
   const { start, end } = getWeekDates(offset);
   const opts = { day: '2-digit', month: '2-digit' };
-  // start = domingo, end = sábado
   const label = `Dom ${start.toLocaleDateString('pt-BR', opts)} – Sáb ${end.toLocaleDateString('pt-BR', opts)}`;
   if (offset === 0) return `Esta semana • ${label}`;
   if (offset === -1) return `Semana passada • ${label}`;
@@ -1225,10 +1284,21 @@ function calcValorDia(funcId, status) {
   if (status === 'meio') return parseFloat(f.diaria) / 2;
   return parseFloat(f.diaria);
 }
+function fmtShort(val) {
+  const n = Number(val || 0);
+  if (Math.abs(n) >= 1000) return 'R$' + (n / 1000).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + 'k';
+  return 'R$' + n.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
+function setSaving(btnId, saving) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  btn.disabled = saving;
+  btn.style.opacity = saving ? '0.6' : '';
+}
 
 // ============================================
 // CONFIRM DIALOG CUSTOMIZADO
-// Substitui o confirm() nativo que travava em PWA
 // ============================================
 function customConfirm(msg, okLabel = 'Confirmar', dangerBtn = true) {
   return new Promise((resolve) => {
@@ -1236,17 +1306,14 @@ function customConfirm(msg, okLabel = 'Confirmar', dangerBtn = true) {
     const okBtn = document.getElementById('confirm-ok');
     okBtn.textContent = okLabel;
     okBtn.className = dangerBtn ? 'btn btn-danger' : 'btn btn-primary';
-
     const overlay = document.getElementById('confirm-overlay');
     overlay.classList.add('open');
-
     const cleanup = (result) => {
       overlay.classList.remove('open');
-      okBtn.replaceWith(okBtn.cloneNode(true)); // remove listeners antigos
+      okBtn.replaceWith(okBtn.cloneNode(true));
       document.getElementById('confirm-cancel').replaceWith(document.getElementById('confirm-cancel').cloneNode(true));
       resolve(result);
     };
-
     document.getElementById('confirm-ok').addEventListener('click', () => cleanup(true), { once: true });
     document.getElementById('confirm-cancel').addEventListener('click', () => cleanup(false), { once: true });
   });
@@ -1305,12 +1372,157 @@ function toast(msg, type = 'info') {
 // ============================================
 // MODAL SYSTEM
 // ============================================
-function openModal(id) { document.getElementById(id).classList.add('open'); document.body.style.overflow = 'hidden'; }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow = ''; }
+function openModal(id) {
+  const el = document.getElementById(id);
+  if (!el) { console.error('Modal não encontrado:', id); return; }
+  el.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.remove('open');
+  document.body.style.overflow = '';
+}
 document.querySelectorAll('.modal-overlay').forEach(overlay => {
   overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(overlay.id); });
 });
 function openFab() { openModal('modal-fab'); }
+
+// ============================================
+// OBRAS
+// ============================================
+function renderObras() {
+  const obras = state.obras || [];
+  const el = document.getElementById('obras-list');
+  if (!el) return;
+  if (!obras.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon" style="font-size:36px;">🏗️</div><div class="empty-title">Nenhuma obra cadastrada</div><div class="empty-sub">Crie sua primeira obra abaixo</div></div>`;
+    return;
+  }
+  const statusClass = { ativa: 'obra-status-ativa', concluida: 'obra-status-concluida', pausada: 'obra-status-pausada' };
+  el.innerHTML = obras.map(o => `
+    <div class="obra-item ${obraAtualId === o.id ? 'selected' : ''}" onclick="selecionarObra('${o.id}')">
+      <div class="obra-icon">${o.emoji || '🏗️'}</div>
+      <div class="obra-info">
+        <div class="obra-nome">${o.nome}</div>
+        <div class="obra-end">${o.endereco || 'Sem endereço'}</div>
+      </div>
+      <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+        <span class="obra-status-badge ${statusClass[o.status] || 'obra-status-ativa'}">${o.status}</span>
+        <div style="display:flex; gap:4px;">
+          <button class="btn btn-secondary btn-icon btn-sm" onclick="event.stopPropagation(); editarObra('${o.id}')">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="btn btn-danger btn-icon btn-sm" onclick="event.stopPropagation(); deleteObra('${o.id}')">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function selecionarObra(id) {
+  obraAtualId = id;
+  localStorage.setItem('obra_atual_id', id);
+  const obra = (state.obras || []).find(o => o.id === id);
+  document.getElementById('obra-selector-nome').textContent = obra ? `${obra.emoji || ''} ${obra.nome}` : 'Sem obra';
+  closeModal('modal-obras');
+  renderDash();
+  renderFuncionarios();
+  renderPontos();
+  renderVales();
+  renderDespesas();
+  renderReceitas();
+  renderFecha();
+  toast(`Obra: ${obra ? obra.nome : ''} selecionada`, 'info');
+}
+
+function abrirNovaObra() {
+  closeModal('modal-obras');
+  document.getElementById('obra-id').value = '';
+  document.getElementById('modal-obra-form-title').textContent = 'Nova Obra';
+  document.getElementById('obra-nome').value = '';
+  document.getElementById('obra-end').value = '';
+  document.getElementById('obra-emoji').value = '🏠';
+  document.getElementById('obra-status').value = 'ativa';
+  openModal('modal-obra-form');
+}
+
+function editarObra(id) {
+  const obra = (state.obras || []).find(o => o.id === id);
+  if (!obra) return;
+  closeModal('modal-obras');
+  document.getElementById('obra-id').value = id;
+  document.getElementById('modal-obra-form-title').textContent = 'Editar Obra';
+  document.getElementById('obra-nome').value = obra.nome;
+  document.getElementById('obra-end').value = obra.endereco || '';
+  document.getElementById('obra-emoji').value = obra.emoji || '🏠';
+  document.getElementById('obra-status').value = obra.status || 'ativa';
+  openModal('modal-obra-form');
+}
+
+async function saveObra() {
+  const id = document.getElementById('obra-id').value;
+  const nome = document.getElementById('obra-nome').value.trim();
+  const endereco = document.getElementById('obra-end').value.trim();
+  const emoji = document.getElementById('obra-emoji').value;
+  const status = document.getElementById('obra-status').value;
+
+  if (!nome) { toast('Informe o nome da obra', 'error'); return; }
+
+  if (!state.obras) state.obras = [];
+  setSaving('btn-save-obra', true);
+  try {
+    if (id) {
+      const idx = state.obras.findIndex(o => o.id === id);
+      state.obras[idx] = { ...state.obras[idx], nome, endereco, emoji, status };
+      await DB.upsert('obras', id, state.obras[idx]);
+      // Atualiza nome no seletor se for a obra atual
+      if (obraAtualId === id) {
+        document.getElementById('obra-selector-nome').textContent = `${emoji} ${nome}`;
+      }
+      toast('Obra atualizada!', 'success');
+    } else {
+      const nova = { id: uid(), nome, endereco, emoji, status, criadaEm: today() };
+      state.obras.push(nova);
+      await DB.upsert('obras', nova.id, nova);
+      // Seleciona automaticamente se for a primeira obra
+      if (state.obras.length === 1) {
+        obraAtualId = nova.id;
+        localStorage.setItem('obra_atual_id', nova.id);
+        document.getElementById('obra-selector-nome').textContent = `${emoji} ${nome}`;
+      }
+      toast('Obra cadastrada!', 'success');
+    }
+    closeModal('modal-obra-form');
+    // Reabre lista de obras
+    renderObras();
+    openModal('modal-obras');
+  } catch (err) {
+    console.error(err);
+    toast('Erro ao salvar obra', 'error');
+  } finally {
+    setSaving('btn-save-obra', false);
+  }
+}
+
+async function deleteObra(id) {
+  const ok = await customConfirm('Excluir esta obra? Os dados vinculados a ela não serão apagados.');
+  if (!ok) return;
+  state.obras = (state.obras || []).filter(o => o.id !== id);
+  try {
+    await DB.remove('obras', id);
+    if (obraAtualId === id) {
+      const proxima = state.obras[0];
+      obraAtualId = proxima ? proxima.id : null;
+      localStorage.setItem('obra_atual_id', obraAtualId || '');
+      document.getElementById('obra-selector-nome').textContent = proxima ? `${proxima.emoji || ''} ${proxima.nome}` : 'Criar obra →';
+    }
+    renderObras();
+    toast('Obra removida', 'info');
+  } catch (err) { toast('Erro ao remover', 'error'); }
+}
 
 // ============================================
 // FUNCIONÁRIOS
@@ -1353,17 +1565,14 @@ async function saveFuncionario() {
     if (id) {
       const idx = state.funcionarios.findIndex(f => f.id === id);
       state.funcionarios[idx] = { ...state.funcionarios[idx], nome, funcao, diaria, tel, status };
-      // FIX: salva só este doc, não a coleção inteira
       await DB.upsert('funcionarios', id, state.funcionarios[idx]);
       toast('Funcionário atualizado!', 'success');
     } else {
       const novo = { id: uid(), nome, funcao, diaria, tel, status, criadoEm: today() };
       state.funcionarios.push(novo);
-      // FIX: salva só este doc
       await DB.upsert('funcionarios', novo.id, novo);
       toast('Funcionário cadastrado!', 'success');
     }
-    // FIX: fecha o modal DEPOIS do await, que agora funciona
     closeModal('modal-func');
     renderFuncionarios();
     renderDash();
@@ -1379,16 +1588,12 @@ async function deleteFuncionario(id) {
   const f = getFunc(id);
   const ok = await customConfirm(`Excluir ${f ? f.nome : 'funcionário'}? Todos os pontos e vales serão removidos.`);
   if (!ok) return;
-
-  // Remove localmente
   const pontosParaRemover = state.pontos.filter(p => p.funcId === id);
   const valesParaRemover = state.vales.filter(v => v.funcId === id);
   state.funcionarios = state.funcionarios.filter(f => f.id !== id);
   state.pontos = state.pontos.filter(p => p.funcId !== id);
   state.vales = state.vales.filter(v => v.funcId !== id);
   state.fechamentos = state.fechamentos.filter(h => h.funcId !== id);
-
-  // Remove no Firebase atomicamente
   try {
     await DB.remove('funcionarios', id);
     for (const p of pontosParaRemover) await DB.remove('pontos', p.id);
@@ -1510,9 +1715,7 @@ async function deletePonto(id) {
     renderPontos();
     renderDash();
     toast('Ponto removido', 'info');
-  } catch (err) {
-    toast('Erro ao remover', 'error');
-  }
+  } catch (err) { toast('Erro ao remover', 'error'); }
 }
 
 function renderPontos() {
@@ -1608,9 +1811,7 @@ async function deleteVale(id) {
     renderVales();
     renderDash();
     toast('Vale removido', 'info');
-  } catch (err) {
-    toast('Erro ao remover', 'error');
-  }
+  } catch (err) { toast('Erro ao remover', 'error'); }
 }
 
 function renderVales() {
@@ -1865,14 +2066,12 @@ async function loadEmpresaConfig() {
     document.getElementById('cfg-empresa-cnpj').value = emp.cnpj || '';
     document.getElementById('cfg-empresa-tel').value = emp.telefone || '';
     document.getElementById('cfg-empresa-end').value = emp.endereco || '';
-    // Atualiza objeto local para uso no PDF
     if (emp.nome) EMPRESA.nome = emp.nome;
     if (emp.cnpj) EMPRESA.cnpj = emp.cnpj;
     if (emp.telefone) EMPRESA.telefone = emp.telefone;
     if (emp.endereco) EMPRESA.endereco = emp.endereco;
   } catch (err) {
     console.error('Erro ao carregar config empresa:', err);
-    // Fallback para localStorage se Firebase falhar
     const emp = JSON.parse(localStorage.getItem('pontoobra_empresa') || '{}');
     document.getElementById('cfg-empresa-nome').value = emp.nome || EMPRESA.nome || '';
     document.getElementById('cfg-empresa-cnpj').value = emp.cnpj || '';
@@ -1890,7 +2089,6 @@ async function salvarEmpresa() {
   };
   try {
     await db.collection('config').doc('empresa').set(emp, { merge: true });
-    // Mantém localStorage como backup local
     localStorage.setItem('pontoobra_empresa', JSON.stringify(emp));
     EMPRESA.nome = emp.nome || EMPRESA.nome;
     EMPRESA.cnpj = emp.cnpj;
@@ -2076,7 +2274,6 @@ function renderDash() {
     }).join('');
   }
 
-  // Resumo mensal
   renderResumoMensal();
 }
 
@@ -2123,7 +2320,6 @@ function gerarPDF(funcId) {
   const f = getFunc(funcId);
   const calc = calcFechamento(funcId, state.fechaWeekOffset);
   const { start, end } = getWeekDates(state.fechaWeekOffset);
-  // Usa dados do objeto EMPRESA que já foi populado pelo loadEmpresaConfig
   const nomeEmp = EMPRESA.nome || 'Construtora';
   const content = `<div style="font-family: Arial, sans-serif; padding: 24px; max-width: 520px; margin: 0 auto;">
     <div style="display:flex; align-items:center; gap:18px; margin-bottom:20px;">
@@ -2164,6 +2360,7 @@ function gerarPDF(funcId) {
 // ============================================
 function exportarDados() {
   const dados = {
+    obras: state.obras,
     funcionarios: state.funcionarios, pontos: state.pontos, vales: state.vales,
     despesas: state.despesas, receitas: state.receitas, fechamentos: state.fechamentos,
     exportadoEm: new Date().toISOString()
@@ -2186,13 +2383,14 @@ async function importarDados(e) {
       if (!dados.funcionarios || !dados.pontos) { toast('Arquivo inválido', 'error'); return; }
       const ok = await customConfirm('Importar backup? Os dados atuais serão substituídos.');
       if (!ok) return;
+      state.obras = dados.obras || [];
       state.funcionarios = dados.funcionarios || [];
       state.pontos = dados.pontos || [];
       state.vales = dados.vales || [];
       state.despesas = dados.despesas || [];
       state.receitas = dados.receitas || [];
       state.fechamentos = dados.fechamentos || [];
-      // Salva tudo no Firebase (import é o único caso justificável de full-write)
+      for (const item of state.obras) await DB.upsert('obras', item.id, item);
       for (const item of state.funcionarios) await DB.upsert('funcionarios', item.id, item);
       for (const item of state.pontos) await DB.upsert('pontos', item.id, item);
       for (const item of state.vales) await DB.upsert('vales', item.id, item);
@@ -2251,7 +2449,7 @@ function dismissInstall() {
 }
 
 // ============================================
-// FEATURE 1: RESUMO MENSAL NO DASHBOARD
+// RESUMO MENSAL
 // ============================================
 function renderResumoMensal() {
   const now = new Date();
@@ -2259,28 +2457,10 @@ function renderResumoMensal() {
   const nomeMes = now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
   document.getElementById('dash-mes-nome').textContent = nomeMes;
 
-  // Receitas do mês
-  const mesReceitas = state.receitas
-    .filter(r => r.data && r.data.startsWith(mesAtual))
-    .reduce((s, r) => s + r.valor, 0);
-
-  // Despesas diretas do mês (material, combustível, etc.)
-  const mesDespesas = state.despesas
-    .filter(d => d.data && d.data.startsWith(mesAtual))
-    .reduce((s, d) => s + d.valor, 0);
-
-  // Mão de obra paga no mês = fechamentos com pagoEm no mês atual
-  // É uma despesa de pessoal, não separada
-  const mesMaoObra = state.fechamentos
-    .filter(h => h.pagoEm && h.pagoEm.startsWith(mesAtual) && h.status === 'pago')
-    .reduce((s, h) => s + (h.valorFinal || 0), 0);
-
-  // Vales do mês (já estão descontados dentro da mão de obra paga)
-  const mesVales = state.vales
-    .filter(v => v.data && v.data.startsWith(mesAtual))
-    .reduce((s, v) => s + v.valor, 0);
-
-  // Saldo = Receitas − Despesas − Mão de Obra (pessoal)
+  const mesReceitas = state.receitas.filter(r => r.data && r.data.startsWith(mesAtual)).reduce((s, r) => s + r.valor, 0);
+  const mesDespesas = state.despesas.filter(d => d.data && d.data.startsWith(mesAtual)).reduce((s, d) => s + d.valor, 0);
+  const mesMaoObra = state.fechamentos.filter(h => h.pagoEm && h.pagoEm.startsWith(mesAtual) && h.status === 'pago').reduce((s, h) => s + (h.valorFinal || 0), 0);
+  const mesVales = state.vales.filter(v => v.data && v.data.startsWith(mesAtual)).reduce((s, v) => s + v.valor, 0);
   const mesSaldo = mesReceitas - mesDespesas - mesMaoObra;
 
   document.getElementById('dash-mes-receitas').textContent = fmtShort(mesReceitas);
@@ -2288,25 +2468,14 @@ function renderResumoMensal() {
   document.getElementById('dash-mes-lucro').textContent = fmtShort(mesSaldo);
   document.getElementById('dash-mes-mao').textContent = fmtShort(mesMaoObra);
   document.getElementById('dash-mes-vales').textContent = fmtShort(mesVales);
+  document.getElementById('dash-mes-pago').textContent = fmtShort(mesDespesas + mesMaoObra);
 
-  // Total saída = despesas + mão de obra
-  const totalSaida = mesDespesas + mesMaoObra;
-  document.getElementById('dash-mes-pago').textContent = fmtShort(totalSaida);
-
-  // Cor do saldo
   const saldoEl = document.getElementById('dash-mes-lucro');
   saldoEl.style.color = mesSaldo >= 0 ? 'var(--green)' : 'var(--red)';
 }
 
-// Formata valor curto: R$1,5k em vez de R$ 1.500,00
-function fmtShort(val) {
-  const n = Number(val || 0);
-  if (Math.abs(n) >= 1000) return 'R$' + (n / 1000).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + 'k';
-  return 'R$' + n.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-}
-
 // ============================================
-// FEATURE 3: HISTÓRICO POR FUNCIONÁRIO
+// HISTÓRICO POR FUNCIONÁRIO
 // ============================================
 let histFuncId = null;
 
@@ -2314,7 +2483,6 @@ function openHistoricoFunc(funcId) {
   histFuncId = funcId;
   const f = getFunc(funcId);
   document.getElementById('modal-hist-func-title').textContent = f ? f.nome : 'Histórico';
-  // Inicializa filtro com mês atual
   const now = new Date();
   document.getElementById('hist-func-mes').value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
   renderHistoricoFunc();
@@ -2323,19 +2491,15 @@ function openHistoricoFunc(funcId) {
 
 function renderHistoricoFunc() {
   if (!histFuncId) return;
-  const mesFiltro = document.getElementById('hist-func-mes').value; // 'YYYY-MM' ou ''
+  const mesFiltro = document.getElementById('hist-func-mes').value;
   const f = getFunc(histFuncId);
-
-  // Filtrar pontos
   let pontos = state.pontos.filter(p => p.funcId === histFuncId);
   if (mesFiltro) pontos = pontos.filter(p => p.data && p.data.startsWith(mesFiltro));
   pontos.sort((a, b) => b.data.localeCompare(a.data));
 
-  // Filtrar vales
   let vales = state.vales.filter(v => v.funcId === histFuncId);
   if (mesFiltro) vales = vales.filter(v => v.data && v.data.startsWith(mesFiltro));
 
-  // Stats
   const diasTrabalhados = pontos.filter(p => p.status === 'trabalhou').length;
   const meios = pontos.filter(p => p.status === 'meio').length;
   const faltas = pontos.filter(p => p.status === 'falta').length;
@@ -2344,30 +2508,12 @@ function renderHistoricoFunc() {
   const totalLiquido = Math.max(0, totalBruto - totalVales);
 
   document.getElementById('hist-func-stats').innerHTML = `
-    <div class="hist-func-stat-item">
-      <div class="hist-func-stat-val">${diasTrabalhados + meios}</div>
-      <div class="hist-func-stat-label">Dias</div>
-    </div>
-    <div class="hist-func-stat-item">
-      <div class="hist-func-stat-val" style="color:var(--red);">${faltas}</div>
-      <div class="hist-func-stat-label">Faltas</div>
-    </div>
-    <div class="hist-func-stat-item">
-      <div class="hist-func-stat-val" style="color:var(--green);">${fmtShort(totalLiquido)}</div>
-      <div class="hist-func-stat-label">Líquido</div>
-    </div>
-    <div class="hist-func-stat-item">
-      <div class="hist-func-stat-val">${fmtShort(totalBruto)}</div>
-      <div class="hist-func-stat-label">Bruto</div>
-    </div>
-    <div class="hist-func-stat-item">
-      <div class="hist-func-stat-val" style="color:var(--orange);">${fmtShort(totalVales)}</div>
-      <div class="hist-func-stat-label">Vales</div>
-    </div>
-    <div class="hist-func-stat-item">
-      <div class="hist-func-stat-val">${fmt(f ? f.diaria : 0).replace('R$ ','R$')}</div>
-      <div class="hist-func-stat-label">Diária</div>
-    </div>`;
+    <div class="hist-func-stat-item"><div class="hist-func-stat-val">${diasTrabalhados + meios}</div><div class="hist-func-stat-label">Dias</div></div>
+    <div class="hist-func-stat-item"><div class="hist-func-stat-val" style="color:var(--red);">${faltas}</div><div class="hist-func-stat-label">Faltas</div></div>
+    <div class="hist-func-stat-item"><div class="hist-func-stat-val" style="color:var(--green);">${fmtShort(totalLiquido)}</div><div class="hist-func-stat-label">Líquido</div></div>
+    <div class="hist-func-stat-item"><div class="hist-func-stat-val">${fmtShort(totalBruto)}</div><div class="hist-func-stat-label">Bruto</div></div>
+    <div class="hist-func-stat-item"><div class="hist-func-stat-val" style="color:var(--orange);">${fmtShort(totalVales)}</div><div class="hist-func-stat-label">Vales</div></div>
+    <div class="hist-func-stat-item"><div class="hist-func-stat-val">${fmt(f ? f.diaria : 0).replace('R$ ','R$')}</div><div class="hist-func-stat-label">Diária</div></div>`;
 
   const statusMap = { trabalhou: { label: '✅ Trabalhou', cor: 'var(--green)' }, falta: { label: '❌ Falta', cor: 'var(--red)' }, meio: { label: '🕐 Meio', cor: 'var(--orange)' } };
   const el = document.getElementById('hist-func-list');
@@ -2377,7 +2523,6 @@ function renderHistoricoFunc() {
     return;
   }
 
-  // Mescla pontos e vales em timeline ordenada
   const eventos = [
     ...pontos.map(p => ({ tipo: 'ponto', data: p.data, item: p })),
     ...vales.map(v => ({ tipo: 'vale', data: v.data, item: v }))
@@ -2388,21 +2533,13 @@ function renderHistoricoFunc() {
       const p = ev.item;
       const s = statusMap[p.status] || { label: p.status, cor: 'var(--text)' };
       return `<div class="hist-func-row">
-        <div>
-          <div style="font-weight:600; font-size:13px;">${fmtDate(p.data)}</div>
-          <div style="font-size:11px; color:${s.cor}; margin-top:2px;">${s.label}${p.obs ? ' • ' + p.obs : ''}</div>
-        </div>
-        <div style="font-family:var(--font-display); font-size:15px; font-weight:700; color:${p.status === 'falta' ? 'var(--text-dim)' : 'var(--yellow)'};">
-          ${p.status === 'falta' ? '—' : fmt(p.valor)}
-        </div>
+        <div><div style="font-weight:600; font-size:13px;">${fmtDate(p.data)}</div><div style="font-size:11px; color:${s.cor}; margin-top:2px;">${s.label}${p.obs ? ' • ' + p.obs : ''}</div></div>
+        <div style="font-family:var(--font-display); font-size:15px; font-weight:700; color:${p.status === 'falta' ? 'var(--text-dim)' : 'var(--yellow)'};">${p.status === 'falta' ? '—' : fmt(p.valor)}</div>
       </div>`;
     } else {
       const v = ev.item;
       return `<div class="hist-func-row">
-        <div>
-          <div style="font-weight:600; font-size:13px;">${fmtDate(v.data)}</div>
-          <div style="font-size:11px; color:var(--red); margin-top:2px;">💸 Vale • ${v.motivo}</div>
-        </div>
+        <div><div style="font-weight:600; font-size:13px;">${fmtDate(v.data)}</div><div style="font-size:11px; color:var(--red); margin-top:2px;">💸 Vale • ${v.motivo}</div></div>
         <div style="font-family:var(--font-display); font-size:15px; font-weight:700; color:var(--red);">-${fmt(v.valor)}</div>
       </div>`;
     }
@@ -2410,13 +2547,7 @@ function renderHistoricoFunc() {
 }
 
 // ============================================
-// FEATURE 4: FILTRO POR PERÍODO (despesas e receitas)
-// Integrado diretamente nas funções renderDespesas e renderReceitas
-// ============================================
-// (o filtro já está no HTML — apenas ajusta as funções existentes)
-
-// ============================================
-// FEATURE 1B: PDF GERAL DA SEMANA
+// PDF GERAL DA SEMANA
 // ============================================
 function gerarPDFGeral() {
   const { start, end } = getWeekDates(state.fechaWeekOffset);
@@ -2440,14 +2571,12 @@ function gerarPDFGeral() {
     </tr>`;
   }).join('');
 
-  // Despesas da semana
   const despSemana = state.despesas.filter(d => inWeek(d.data, state.fechaWeekOffset));
   const totalDesp = despSemana.reduce((s, d) => s + d.valor, 0);
   const linhasDesp = despSemana.length ? despSemana.map(d =>
     `<tr style="border-bottom:1px solid #eee;"><td style="padding:6px 4px;">${d.descricao}</td><td style="padding:6px 4px; color:#888; font-size:12px;">${d.categoria}</td><td style="padding:6px 4px; text-align:right; color:#e53e3e; font-weight:600;">${fmt(d.valor)}</td></tr>`
   ).join('') : '<tr><td colspan="3" style="padding:12px; text-align:center; color:#aaa;">Nenhuma despesa esta semana</td></tr>';
 
-  // Receitas da semana
   const recSemana = state.receitas.filter(r => inWeek(r.data, state.fechaWeekOffset));
   const totalRec = recSemana.reduce((s, r) => s + r.valor, 0);
   const linhasRec = recSemana.length ? recSemana.map(r =>
@@ -2468,49 +2597,28 @@ function gerarPDFGeral() {
     <div style="font-size:16px;font-weight:700;text-transform:uppercase;">Relatório Geral da Semana</div>
     <div style="font-size:13px;color:#666;margin-top:4px;">${start.toLocaleDateString('pt-BR')} a ${end.toLocaleDateString('pt-BR')}</div>
   </div>
-
   <div style="font-weight:700;font-size:14px;margin-bottom:8px;border-bottom:2px solid #F5C400;padding-bottom:4px;">👷 Mão de Obra</div>
   <table style="margin-bottom:20px;">
-    <thead><tr>
-      <th>Funcionário</th><th>Função</th><th style="text-align:center;">Dias</th><th style="text-align:center;">Faltas</th>
-      <th style="text-align:right;">Bruto</th><th style="text-align:right;">Vales</th><th style="text-align:right;">A Pagar</th>
-    </tr></thead>
+    <thead><tr><th>Funcionário</th><th>Função</th><th style="text-align:center;">Dias</th><th style="text-align:center;">Faltas</th><th style="text-align:right;">Bruto</th><th style="text-align:right;">Vales</th><th style="text-align:right;">A Pagar</th></tr></thead>
     <tbody>${linhasFuncs}</tbody>
-    <tfoot><tr style="background:#f9f9f9;font-weight:700;">
-      <td colspan="4" style="padding:10px 4px;">TOTAL MÃO DE OBRA</td>
-      <td style="padding:10px 4px;text-align:right;">${fmt(totalGeralBruto)}</td>
-      <td style="padding:10px 4px;text-align:right;color:#e53e3e;">-${fmt(totalGeralVales)}</td>
-      <td style="padding:10px 4px;text-align:right;color:#c49b00;font-size:16px;">${fmt(totalGeralLiquido)}</td>
-    </tr></tfoot>
+    <tfoot><tr style="background:#f9f9f9;font-weight:700;"><td colspan="4" style="padding:10px 4px;">TOTAL MÃO DE OBRA</td><td style="padding:10px 4px;text-align:right;">${fmt(totalGeralBruto)}</td><td style="padding:10px 4px;text-align:right;color:#e53e3e;">-${fmt(totalGeralVales)}</td><td style="padding:10px 4px;text-align:right;color:#c49b00;font-size:16px;">${fmt(totalGeralLiquido)}</td></tr></tfoot>
   </table>
-
   <div style="font-weight:700;font-size:14px;margin-bottom:8px;border-bottom:2px solid #F5C400;padding-bottom:4px;">💸 Despesas da Semana</div>
   <table style="margin-bottom:20px;">
     <thead><tr><th>Descrição</th><th>Categoria</th><th style="text-align:right;">Valor</th></tr></thead>
     <tbody>${linhasDesp}</tbody>
     <tfoot><tr style="background:#f9f9f9;font-weight:700;"><td colspan="2" style="padding:8px 4px;">TOTAL DESPESAS</td><td style="padding:8px 4px;text-align:right;color:#e53e3e;">${fmt(totalDesp)}</td></tr></tfoot>
   </table>
-
   <div style="font-weight:700;font-size:14px;margin-bottom:8px;border-bottom:2px solid #F5C400;padding-bottom:4px;">💰 Receitas da Semana</div>
   <table style="margin-bottom:20px;">
     <thead><tr><th>Descrição</th><th>Categoria</th><th style="text-align:right;">Valor</th></tr></thead>
     <tbody>${linhasRec}</tbody>
     <tfoot><tr style="background:#f9f9f9;font-weight:700;"><td colspan="2" style="padding:8px 4px;">TOTAL RECEITAS</td><td style="padding:8px 4px;text-align:right;color:#2ecc71;">${fmt(totalRec)}</td></tr></tfoot>
   </table>
-
   <div style="background:#111;color:#fff;border-radius:8px;padding:16px;display:flex;justify-content:space-between;align-items:center;">
-    <div>
-      <div style="font-size:12px;color:#aaa;margin-bottom:4px;">Receitas − Despesas − Mão de Obra</div>
-      <div style="font-size:12px;">
-        ${fmt(totalRec)} − ${fmt(totalDesp)} − ${fmt(totalGeralLiquido)}
-      </div>
-    </div>
-    <div style="text-align:right;">
-      <div style="font-size:12px;color:#aaa;">SALDO DA SEMANA</div>
-      <div style="font-size:28px;font-weight:900;color:${saldoFinal>=0?'#F5C400':'#FF4545'};">${fmt(saldoFinal)}</div>
-    </div>
+    <div><div style="font-size:12px;color:#aaa;margin-bottom:4px;">Receitas − Despesas − Mão de Obra</div><div style="font-size:12px;">${fmt(totalRec)} − ${fmt(totalDesp)} − ${fmt(totalGeralLiquido)}</div></div>
+    <div style="text-align:right;"><div style="font-size:12px;color:#aaa;">SALDO DA SEMANA</div><div style="font-size:28px;font-weight:900;color:${saldoFinal>=0?'#F5C400':'#FF4545'};">${fmt(saldoFinal)}</div></div>
   </div>
-
   <div style="text-align:center;color:#bbb;font-size:11px;margin-top:24px;">Gerado em ${new Date().toLocaleString('pt-BR')} via Controle de Obra</div>
   <div style="text-align:center;margin-top:16px;"><button onclick="window.print()" style="background:#F5C400;color:#000;border:none;padding:12px 24px;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;">🖨️ Imprimir / Salvar PDF</button></div>
   </body></html>`;
@@ -2521,68 +2629,42 @@ function gerarPDFGeral() {
 }
 
 // ============================================
-// FEATURE 10: LEMBRETE DE PAGAMENTO (PUSH NOTIFICATION)
+// NOTIFICAÇÕES
 // ============================================
 async function initNotificacoes() {
-  // Verifica suporte
   if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
-
-  // Checa se já tem permissão
-  if (Notification.permission === 'granted') {
-    agendarLembretePagamento();
-    return;
-  }
-
-  // Só pede permissão se nunca foi perguntado
+  if (Notification.permission === 'granted') { agendarLembretePagamento(); return; }
   if (Notification.permission === 'default') {
     const jaAskado = localStorage.getItem('notif_asked');
     if (!jaAskado) {
-      // Mostra prompt amigável antes de pedir permissão do browser
       setTimeout(async () => {
-        const ok = await customConfirm(
-          '🔔 Ativar lembrete de pagamento?\n\nVocê receberá uma notificação todo sábado às 7h lembrando do pagamento dos funcionários.',
-          'Ativar', false
-        );
+        const ok = await customConfirm('🔔 Ativar lembrete de pagamento?\n\nVocê receberá uma notificação todo sábado às 7h lembrando do pagamento dos funcionários.', 'Ativar', false);
         localStorage.setItem('notif_asked', '1');
         if (!ok) return;
         const perm = await Notification.requestPermission();
-        if (perm === 'granted') {
-          agendarLembretePagamento();
-          toast('Lembretes ativados! Todo sábado às 7h.', 'success');
-        }
-      }, 3000); // espera 3s para não assustar o usuário na abertura
+        if (perm === 'granted') { agendarLembretePagamento(); toast('Lembretes ativados! Todo sábado às 7h.', 'success'); }
+      }, 3000);
     }
   }
 }
 
 function agendarLembretePagamento() {
-  // Usa setInterval para checar a cada hora se é sábado 7h
-  // (solução simples sem precisar de push server)
   const checarENotificar = () => {
     const agora = new Date();
-    const diaSemana = agora.getDay(); // 6 = sábado
-    const hora = agora.getHours();
-    const minuto = agora.getMinutes();
     const chaveHoje = `notif_pag_${toYMD(agora)}`;
-
-    if (diaSemana === 6 && hora === 7 && minuto < 5) {
-      // É sábado entre 7:00 e 7:04
+    if (agora.getDay() === 6 && agora.getHours() === 7 && agora.getMinutes() < 5) {
       if (!localStorage.getItem(chaveHoje)) {
-        // Calcula total a pagar
         const totalPendente = calcTotalPendenteSemana();
         new Notification('💰 Dia de Pagamento!', {
           body: `Hoje é sábado! Total a pagar: ${fmt(totalPendente)}. Acesse o app para confirmar.`,
-          icon: './logo.png',
-          badge: './logo.png',
-          tag: 'pagamento-semanal'
+          icon: './logo.png', badge: './logo.png', tag: 'pagamento-semanal'
         });
         localStorage.setItem(chaveHoje, '1');
       }
     }
   };
-
-  checarENotificar(); // checa imediatamente
-  setInterval(checarENotificar, 60 * 1000); // checa a cada minuto
+  checarENotificar();
+  setInterval(checarENotificar, 60 * 1000);
 }
 
 function calcTotalPendenteSemana() {
@@ -2591,10 +2673,7 @@ function calcTotalPendenteSemana() {
   const weekKey = toYMD(start) + '_' + toYMD(end);
   return ativos
     .filter(f => !state.fechamentos.some(h => h.funcId === f.id && h.weekKey === weekKey && h.status === 'pago'))
-    .reduce((s, f) => {
-      const calc = calcFechamento(f.id, 0);
-      return s + calc.valorFinal;
-    }, 0);
+    .reduce((s, f) => { const calc = calcFechamento(f.id, 0); return s + calc.valorFinal; }, 0);
 }
 
 // ============================================
@@ -2603,9 +2682,10 @@ function calcTotalPendenteSemana() {
 async function init() {
   applyTheme();
   try {
-    const [funcionarios, pontos, vales, despesas, receitas, fechamentos] = await Promise.all([
+    const [funcionarios, pontos, vales, despesas, receitas, fechamentos, obras] = await Promise.all([
       DB.getAll('funcionarios'), DB.getAll('pontos'), DB.getAll('vales'),
-      DB.getAll('despesas'), DB.getAll('receitas'), DB.getAll('fechamentos')
+      DB.getAll('despesas'), DB.getAll('receitas'), DB.getAll('fechamentos'),
+      DB.getAll('obras')
     ]);
     state.funcionarios = funcionarios;
     state.pontos = pontos;
@@ -2613,16 +2693,32 @@ async function init() {
     state.despesas = despesas;
     state.receitas = receitas;
     state.fechamentos = fechamentos;
+    state.obras = obras;
   } catch (err) {
     console.error('Erro ao carregar dados:', err);
     toast('Erro ao carregar dados. Verifique sua conexão.', 'error');
   } finally {
     document.getElementById('loading-overlay').style.display = 'none';
     document.getElementById('app').style.display = 'flex';
+
+    // Restaura ou define obra selecionada
+    if (state.obras.length > 0) {
+      const obraSalva = state.obras.find(o => o.id === obraAtualId);
+      const obraParaUsar = obraSalva || state.obras[0];
+      obraAtualId = obraParaUsar.id;
+      localStorage.setItem('obra_atual_id', obraAtualId);
+      document.getElementById('obra-selector-nome').textContent = `${obraParaUsar.emoji || ''} ${obraParaUsar.nome}`.trim();
+    } else {
+      document.getElementById('obra-selector-nome').textContent = 'Criar obra →';
+    }
+
+    // Pré-renderiza lista de obras para quando modal abrir
+    renderObras();
+
     renderDash();
     updatePontoWeekLabel();
     updateFechaWeekLabel();
-    await loadEmpresaConfig(); // carrega empresa do Firebase no boot
+    await loadEmpresaConfig();
     initInstallBanner();
     initNotificacoes();
   }
