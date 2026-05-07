@@ -1298,6 +1298,14 @@ function setSaving(btnId, saving) {
 }
 
 // ============================================
+// FILTRO POR OBRA
+// ============================================
+function filterByObra(arr) {
+  if (!obraAtualId) return [];
+  return arr.filter(item => item.obraId === obraAtualId);
+}
+
+// ============================================
 // CONFIRM DIALOG CUSTOMIZADO
 // ============================================
 function customConfirm(msg, okLabel = 'Confirmar', dangerBtn = true) {
@@ -1478,7 +1486,6 @@ async function saveObra() {
       const idx = state.obras.findIndex(o => o.id === id);
       state.obras[idx] = { ...state.obras[idx], nome, endereco, emoji, status };
       await DB.upsert('obras', id, state.obras[idx]);
-      // Atualiza nome no seletor se for a obra atual
       if (obraAtualId === id) {
         document.getElementById('obra-selector-nome').textContent = `${emoji} ${nome}`;
       }
@@ -1487,7 +1494,6 @@ async function saveObra() {
       const nova = { id: uid(), nome, endereco, emoji, status, criadaEm: today() };
       state.obras.push(nova);
       await DB.upsert('obras', nova.id, nova);
-      // Seleciona automaticamente se for a primeira obra
       if (state.obras.length === 1) {
         obraAtualId = nova.id;
         localStorage.setItem('obra_atual_id', nova.id);
@@ -1496,7 +1502,6 @@ async function saveObra() {
       toast('Obra cadastrada!', 'success');
     }
     closeModal('modal-obra-form');
-    // Reabre lista de obras
     renderObras();
     openModal('modal-obras');
   } catch (err) {
@@ -1559,6 +1564,7 @@ async function saveFuncionario() {
   if (!nome) { toast('Informe o nome', 'error'); return; }
   if (!funcao) { toast('Informe a função', 'error'); return; }
   if (!diaria || diaria <= 0) { toast('Valor da diária inválido', 'error'); return; }
+  if (!obraAtualId) { toast('Selecione uma obra primeiro', 'error'); return; }
 
   setSaving('btn-save-func', true);
   try {
@@ -1568,7 +1574,7 @@ async function saveFuncionario() {
       await DB.upsert('funcionarios', id, state.funcionarios[idx]);
       toast('Funcionário atualizado!', 'success');
     } else {
-      const novo = { id: uid(), nome, funcao, diaria, tel, status, criadoEm: today() };
+      const novo = { id: uid(), clienteId: obraAtualId, nome, funcao, diaria, tel, status, criadoEm: today(), obraId: obraAtualId };
       state.funcionarios.push(novo);
       await DB.upsert('funcionarios', novo.id, novo);
       toast('Funcionário cadastrado!', 'success');
@@ -1609,7 +1615,7 @@ async function deleteFuncionario(id) {
 
 function renderFuncionarios() {
   const search = (document.getElementById('func-search')?.value || '').toLowerCase();
-  let list = state.funcionarios.filter(f => {
+  let list = filterByObra(state.funcionarios).filter(f => {
     if (funcFilter === 'active' && f.status !== 'ativo') return false;
     if (funcFilter === 'inactive' && f.status !== 'inativo') return false;
     if (search && !f.nome.toLowerCase().includes(search) && !f.funcao.toLowerCase().includes(search)) return false;
@@ -1651,7 +1657,7 @@ function openModalPonto(id = null) {
   document.getElementById('ponto-id').value = id || '';
   document.getElementById('modal-ponto-title').textContent = editing ? 'Editar Ponto' : 'Registrar Ponto';
   const sel = document.getElementById('ponto-func-id');
-  const ativos = state.funcionarios.filter(f => f.status === 'ativo');
+  const ativos = filterByObra(state.funcionarios).filter(f => f.status === 'ativo');
   sel.innerHTML = ativos.length
     ? ativos.map(f => `<option value="${f.id}" ${editing && editing.funcId === f.id ? 'selected' : ''}>${f.nome}</option>`).join('')
     : '<option value="">Nenhum funcionário ativo</option>';
@@ -1679,6 +1685,8 @@ async function savePonto() {
 
   if (!funcId) { toast('Selecione o funcionário', 'error'); return; }
   if (!data) { toast('Informe a data', 'error'); return; }
+  if (!obraAtualId) { toast('Selecione uma obra primeiro', 'error'); return; }
+
   const dup = state.pontos.find(p => p.funcId === funcId && p.data === data && p.id !== id);
   if (dup) { toast('Já existe ponto para este dia!', 'error'); return; }
 
@@ -1690,7 +1698,7 @@ async function savePonto() {
       await DB.upsert('pontos', id, state.pontos[idx]);
       toast('Ponto atualizado!', 'success');
     } else {
-      const novo = { id: uid(), funcId, data, status, obs, valor };
+      const novo = { id: uid(), funcId, data, status, obs, valor, obraId: obraAtualId };
       state.pontos.push(novo);
       await DB.upsert('pontos', novo.id, novo);
       toast('Ponto registrado!', 'success');
@@ -1721,7 +1729,7 @@ async function deletePonto(id) {
 function renderPontos() {
   updatePontoWeekLabel();
   const search = (document.getElementById('ponto-search')?.value || '').toLowerCase();
-  let pontos = state.pontos.filter(p => {
+  let pontos = filterByObra(state.pontos).filter(p => {
     if (!inWeek(p.data, state.pontoWeekOffset)) return false;
     if (search && !getFuncName(p.funcId).toLowerCase().includes(search)) return false;
     return true;
@@ -1760,7 +1768,8 @@ function openModalVale(id = null) {
   document.getElementById('vale-id').value = id || '';
   document.getElementById('modal-vale-title').textContent = editing ? 'Editar Vale' : 'Novo Vale';
   const sel = document.getElementById('vale-func-id');
-  sel.innerHTML = state.funcionarios.map(f => `<option value="${f.id}" ${editing && editing.funcId === f.id ? 'selected' : ''}>${f.nome}</option>`).join('') || '<option>Nenhum funcionário</option>';
+  const funcs = filterByObra(state.funcionarios);
+  sel.innerHTML = funcs.map(f => `<option value="${f.id}" ${editing && editing.funcId === f.id ? 'selected' : ''}>${f.nome}</option>`).join('') || '<option>Nenhum funcionário</option>';
   document.getElementById('vale-valor').value = editing ? editing.valor : '';
   document.getElementById('vale-data').value = editing ? editing.data : today();
   document.getElementById('vale-motivo').value = editing ? editing.motivo : '';
@@ -1777,6 +1786,7 @@ async function saveVale() {
   if (!funcId) { toast('Selecione o funcionário', 'error'); return; }
   if (!valor || valor <= 0) { toast('Valor inválido', 'error'); return; }
   if (!motivo) { toast('Informe o motivo', 'error'); return; }
+  if (!obraAtualId) { toast('Selecione uma obra primeiro', 'error'); return; }
 
   setSaving('btn-save-vale', true);
   try {
@@ -1786,7 +1796,7 @@ async function saveVale() {
       await DB.upsert('vales', id, state.vales[idx]);
       toast('Vale atualizado!', 'success');
     } else {
-      const novo = { id: uid(), funcId, valor, data, motivo };
+      const novo = { id: uid(), funcId, valor, data, motivo, obraId: obraAtualId };
       state.vales.push(novo);
       await DB.upsert('vales', novo.id, novo);
       toast('Vale registrado!', 'success');
@@ -1816,15 +1826,15 @@ async function deleteVale(id) {
 
 function renderVales() {
   const search = (document.getElementById('vale-search')?.value || '').toLowerCase();
-  let vales = state.vales.filter(v => {
+  let vales = filterByObra(state.vales).filter(v => {
     if (search && !getFuncName(v.funcId).toLowerCase().includes(search)) return false;
     return true;
   }).sort((a, b) => b.data.localeCompare(a.data));
 
-  const total = state.vales.reduce((s, v) => s + v.valor, 0);
+  const total = vales.reduce((s, v) => s + v.valor, 0);
   const now = new Date();
   const mesAtual = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
-  const mesTotal = state.vales.filter(v => v.data && v.data.startsWith(mesAtual)).reduce((s, v) => s + v.valor, 0);
+  const mesTotal = vales.filter(v => v.data && v.data.startsWith(mesAtual)).reduce((s, v) => s + v.valor, 0);
   document.getElementById('vales-total-val').textContent = fmt(total);
   document.getElementById('vales-pending-val').textContent = fmt(mesTotal);
 
@@ -1879,6 +1889,7 @@ async function saveDespesa() {
 
   if (!descricao) { toast('Informe a descrição', 'error'); return; }
   if (!valor || valor <= 0) { toast('Valor inválido', 'error'); return; }
+  if (!obraAtualId) { toast('Selecione uma obra primeiro', 'error'); return; }
 
   setSaving('btn-save-desp', true);
   try {
@@ -1888,7 +1899,7 @@ async function saveDespesa() {
       await DB.upsert('despesas', id, state.despesas[idx]);
       toast('Despesa atualizada!', 'success');
     } else {
-      const novo = { id: uid(), categoria, descricao, valor, data, responsavel };
+      const novo = { id: uid(), categoria, descricao, valor, data, responsavel, obraId: obraAtualId };
       state.despesas.push(novo);
       await DB.upsert('despesas', novo.id, novo);
       toast('Despesa registrada!', 'success');
@@ -1919,17 +1930,17 @@ async function deleteDespesa(id) {
 function renderDespesas() {
   const search = (document.getElementById('desp-search')?.value || '').toLowerCase();
   const mesFiltro = document.getElementById('desp-mes-filtro')?.value || '';
-  let despesas = state.despesas.filter(d => {
+  let despesas = filterByObra(state.despesas).filter(d => {
     if (despCatFilter !== 'todas' && d.categoria !== despCatFilter) return false;
     if (search && !d.descricao.toLowerCase().includes(search)) return false;
     if (mesFiltro && !(d.data && d.data.startsWith(mesFiltro))) return false;
     return true;
   }).sort((a, b) => b.data.localeCompare(a.data));
 
-  const total = state.despesas.reduce((s, d) => s + d.valor, 0);
+  const total = despesas.reduce((s, d) => s + d.valor, 0);
   const now = new Date();
   const mesAtual = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
-  const mesTotal = state.despesas.filter(d => d.data && d.data.startsWith(mesAtual)).reduce((s, d) => s + d.valor, 0);
+  const mesTotal = despesas.filter(d => d.data && d.data.startsWith(mesAtual)).reduce((s, d) => s + d.valor, 0);
   document.getElementById('desp-total-val').textContent = fmt(total);
   document.getElementById('desp-mes-val').textContent = fmt(mesTotal);
 
@@ -1983,6 +1994,7 @@ async function saveReceita() {
 
   if (!descricao) { toast('Informe a descrição', 'error'); return; }
   if (!valor || valor <= 0) { toast('Valor inválido', 'error'); return; }
+  if (!obraAtualId) { toast('Selecione uma obra primeiro', 'error'); return; }
 
   setSaving('btn-save-receita', true);
   try {
@@ -1992,7 +2004,7 @@ async function saveReceita() {
       await DB.upsert('receitas', id, state.receitas[idx]);
       toast('Receita atualizada!', 'success');
     } else {
-      const novo = { id: uid(), categoria, descricao, valor, data, obs };
+      const novo = { id: uid(), categoria, descricao, valor, data, obs, obraId: obraAtualId };
       state.receitas.push(novo);
       await DB.upsert('receitas', novo.id, novo);
       toast('Receita registrada!', 'success');
@@ -2023,17 +2035,17 @@ async function deleteReceita(id) {
 function renderReceitas() {
   const search = (document.getElementById('receitas-search')?.value || '').toLowerCase();
   const mesFiltro = document.getElementById('receitas-mes-filtro')?.value || '';
-  let receitas = state.receitas.filter(r => {
+  let receitas = filterByObra(state.receitas).filter(r => {
     if (receitaCatFilter !== 'todas' && r.categoria !== receitaCatFilter) return false;
     if (search && !r.descricao.toLowerCase().includes(search)) return false;
     if (mesFiltro && !(r.data && r.data.startsWith(mesFiltro))) return false;
     return true;
   }).sort((a, b) => b.data.localeCompare(a.data));
 
-  const total = state.receitas.reduce((s, r) => s + r.valor, 0);
+  const total = receitas.reduce((s, r) => s + r.valor, 0);
   const now = new Date();
   const mesAtual = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
-  const mesTotal = state.receitas.filter(r => r.data && r.data.startsWith(mesAtual)).reduce((s, r) => s + r.valor, 0);
+  const mesTotal = receitas.filter(r => r.data && r.data.startsWith(mesAtual)).reduce((s, r) => s + r.valor, 0);
   document.getElementById('receitas-total-val').textContent = fmt(total);
   document.getElementById('receitas-mes-val').textContent = fmt(mesTotal);
 
@@ -2105,10 +2117,11 @@ async function salvarEmpresa() {
 // MARCAR TODOS HOJE
 // ============================================
 async function marcarTodosHoje() {
-  const ativos = state.funcionarios.filter(f => f.status === 'ativo');
-  if (!ativos.length) { toast('Nenhum funcionário ativo', 'error'); return; }
+  if (!obraAtualId) { toast('Selecione uma obra primeiro', 'error'); return; }
+  const ativos = filterByObra(state.funcionarios).filter(f => f.status === 'ativo');
+  if (!ativos.length) { toast('Nenhum funcionário ativo nesta obra', 'error'); return; }
   const todayStr = today();
-  const semRegistro = ativos.filter(f => !state.pontos.find(p => p.funcId === f.id && p.data === todayStr));
+  const semRegistro = ativos.filter(f => !state.pontos.find(p => p.funcId === f.id && p.data === todayStr && p.obraId === obraAtualId));
   if (!semRegistro.length) { toast('Todos já têm registro hoje!', 'info'); return; }
 
   const ok = await customConfirm(`Marcar ${semRegistro.length} funcionário(s) como presentes hoje?`, 'Confirmar', false);
@@ -2116,7 +2129,7 @@ async function marcarTodosHoje() {
 
   try {
     for (const f of semRegistro) {
-      const novo = { id: uid(), funcId: f.id, data: todayStr, status: 'trabalhou', obs: '', valor: parseFloat(f.diaria) };
+      const novo = { id: uid(), funcId: f.id, data: todayStr, status: 'trabalhou', obs: '', valor: parseFloat(f.diaria), obraId: obraAtualId };
       state.pontos.push(novo);
       await DB.upsert('pontos', novo.id, novo);
     }
@@ -2141,12 +2154,12 @@ function changeWeekFecha(dir) {
 function updateFechaWeekLabel() { document.getElementById('fecha-week-label').textContent = weekLabel(state.fechaWeekOffset); }
 
 function calcFechamento(funcId, offset) {
-  const pontosDaSemana = state.pontos.filter(p => p.funcId === funcId && inWeek(p.data, offset));
+  const pontosDaSemana = filterByObra(state.pontos).filter(p => p.funcId === funcId && inWeek(p.data, offset));
   const diasTrabalhados = pontosDaSemana.filter(p => p.status === 'trabalhou').length;
   const meios = pontosDaSemana.filter(p => p.status === 'meio').length;
   const faltas = pontosDaSemana.filter(p => p.status === 'falta').length;
   const valorBruto = pontosDaSemana.reduce((s, p) => s + (p.valor || 0), 0);
-  const valesDaSemana = state.vales.filter(v => v.funcId === funcId && inWeek(v.data, offset));
+  const valesDaSemana = filterByObra(state.vales).filter(v => v.funcId === funcId && inWeek(v.data, offset));
   const totalVales = valesDaSemana.reduce((s, v) => s + v.valor, 0);
   const valorFinal = Math.max(0, valorBruto - totalVales);
   return { diasTrabalhados, meios, faltas, valorBruto, totalVales, valesPendentes: totalVales, valorFinal, pontosDaSemana, valesDaSemana };
@@ -2160,9 +2173,9 @@ async function marcarPago(funcId) {
   const registro = {
     id: uid(), funcId, nomeFuncionario: f.nome, funcao: f.funcao,
     weekKey, weekLabel: weekLabel(state.fechaWeekOffset),
-    ...calc, pagoEm: today(), status: 'pago'
+    ...calc, pagoEm: today(), status: 'pago', obraId: obraAtualId
   };
-  const filtered = state.fechamentos.filter(h => !(h.funcId === funcId && h.weekKey === weekKey));
+  const filtered = state.fechamentos.filter(h => !(h.funcId === funcId && h.weekKey === weekKey && h.obraId === obraAtualId));
   filtered.push(registro);
   state.fechamentos = filtered;
   try {
@@ -2189,16 +2202,20 @@ async function reverterPagamento(fechId) {
 }
 
 function renderFecha() {
+  if (!obraAtualId) {
+    document.getElementById('fecha-list').innerHTML = `<div class="empty-state"><div class="empty-title">Selecione uma obra</div><div class="empty-sub">Crie ou selecione uma obra para ver o fechamento.</div></div>`;
+    return;
+  }
   updateFechaWeekLabel();
   const { start: s, end: e } = getWeekDates(state.fechaWeekOffset);
   const weekKey = toYMD(s) + '_' + toYMD(e);
-  const ativos = state.funcionarios.filter(f => {
+  const ativos = filterByObra(state.funcionarios).filter(f => {
     if (f.status !== 'ativo') return false;
-    return !state.fechamentos.some(h => h.funcId === f.id && h.weekKey === weekKey && h.status === 'pago');
+    return !state.fechamentos.some(h => h.funcId === f.id && h.weekKey === weekKey && h.status === 'pago' && h.obraId === obraAtualId);
   });
   const el = document.getElementById('fecha-list');
   if (!ativos.length) {
-    const temAtivos = state.funcionarios.some(f => f.status === 'ativo');
+    const temAtivos = filterByObra(state.funcionarios).some(f => f.status === 'ativo');
     el.innerHTML = `<div class="empty-state"><div class="empty-icon" style="font-size:36px;">${temAtivos ? '✅' : '👷'}</div><div class="empty-title">${temAtivos ? 'Todos pagos esta semana!' : 'Nenhum funcionário ativo'}</div><div class="empty-sub">${temAtivos ? 'Nenhum pagamento pendente.' : 'Cadastre funcionários na aba Equipe.'}</div></div>`;
     return;
   }
@@ -2229,27 +2246,41 @@ function renderFecha() {
 // DASHBOARD
 // ============================================
 function renderDash() {
+  if (!obraAtualId) {
+    document.getElementById('dash-funcionarios').textContent = '0';
+    document.getElementById('dash-presentes').textContent = '0';
+    document.getElementById('dash-total-week').textContent = 'R$ 0,00';
+    document.getElementById('dash-vales').textContent = 'R$ 0';
+    document.getElementById('dash-pago').textContent = 'R$ 0';
+    document.getElementById('dash-pendente').textContent = 'R$ 0,00';
+    document.getElementById('dash-receitas').textContent = 'R$ 0';
+    document.getElementById('dash-despesas').textContent = 'R$ 0';
+    document.getElementById('dash-saldo').textContent = 'R$ 0';
+    document.getElementById('dash-today-list').innerHTML = `<div class="empty-state"><div class="empty-title">Selecione uma obra</div><div class="empty-sub">Crie ou selecione uma obra para começar.</div></div>`;
+    return;
+  }
+
   const { start, end } = getWeekDates(0);
   document.getElementById('dash-week-range').textContent =
     start.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' }) + ' – ' +
     end.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
 
-  const ativos = state.funcionarios.filter(f => f.status === 'ativo');
+  const ativos = filterByObra(state.funcionarios).filter(f => f.status === 'ativo');
   document.getElementById('dash-funcionarios').textContent = ativos.length;
 
   const todayStr = today();
-  const todayPontos = state.pontos.filter(p => p.data === todayStr);
+  const todayPontos = filterByObra(state.pontos).filter(p => p.data === todayStr);
   const presentes = todayPontos.filter(p => p.status === 'trabalhou' || p.status === 'meio').length;
   document.getElementById('dash-presentes').textContent = ativos.length > 0 ? `${presentes}/${ativos.length}` : '0';
 
-  const weekPontos = state.pontos.filter(p => inWeek(p.data, 0));
+  const weekPontos = filterByObra(state.pontos).filter(p => inWeek(p.data, 0));
   const weekTotal = weekPontos.reduce((s, p) => s + (p.valor || 0), 0);
   document.getElementById('dash-total-week').textContent = fmt(weekTotal);
 
-  const valesTotal = state.vales.reduce((s, v) => s + v.valor, 0);
+  const valesTotal = filterByObra(state.vales).reduce((s, v) => s + v.valor, 0);
   document.getElementById('dash-vales').textContent = fmt(valesTotal);
 
-  const fecds = state.fechamentos || [];
+  const fecds = filterByObra(state.fechamentos);
   const totalPago = fecds.filter(h => h.status === 'pago').reduce((s, h) => s + (h.valorFinal || 0), 0);
   document.getElementById('dash-pago').textContent = fmt(totalPago);
 
@@ -2257,8 +2288,8 @@ function renderDash() {
   const weekPago = fecds.filter(h => h.weekKey && h.weekKey.startsWith(toYMD(ws))).reduce((s, h) => s + (h.valorFinal || 0), 0);
   document.getElementById('dash-pendente').textContent = fmt(Math.max(0, weekTotal - weekPago));
 
-  const totalReceitas = state.receitas.reduce((s, r) => s + r.valor, 0);
-  const totalDespesas = state.despesas.reduce((s, d) => s + d.valor, 0);
+  const totalReceitas = filterByObra(state.receitas).reduce((s, r) => s + r.valor, 0);
+  const totalDespesas = filterByObra(state.despesas).reduce((s, d) => s + d.valor, 0);
   document.getElementById('dash-receitas').textContent = fmt(totalReceitas);
   document.getElementById('dash-despesas').textContent = fmt(totalDespesas);
   document.getElementById('dash-saldo').textContent = fmt(totalReceitas - totalDespesas);
@@ -2281,7 +2312,7 @@ function renderDash() {
 // HISTÓRICO
 // ============================================
 function renderHist() {
-  const fecds = state.fechamentos || [];
+  const fecds = filterByObra(state.fechamentos);
   const el = document.getElementById('hist-list');
   if (!fecds.length) { el.innerHTML = `<div class="empty-state"><div class="empty-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg></div><div class="empty-title">Sem fechamentos ainda</div><div class="empty-sub">Fechamentos pagos aparecerão aqui</div></div>`; return; }
   const byWeek = {};
@@ -2390,6 +2421,15 @@ async function importarDados(e) {
       state.despesas = dados.despesas || [];
       state.receitas = dados.receitas || [];
       state.fechamentos = dados.fechamentos || [];
+
+      // Se dados importados não têm obraId, associa à obra atual (se houver)
+      const currentObra = obraAtualId;
+      if (currentObra) {
+        [state.funcionarios, state.pontos, state.vales, state.despesas, state.receitas, state.fechamentos].forEach(arr => {
+          arr.forEach(item => { if (!item.obraId) item.obraId = currentObra; });
+        });
+      }
+
       for (const item of state.obras) await DB.upsert('obras', item.id, item);
       for (const item of state.funcionarios) await DB.upsert('funcionarios', item.id, item);
       for (const item of state.pontos) await DB.upsert('pontos', item.id, item);
@@ -2452,15 +2492,16 @@ function dismissInstall() {
 // RESUMO MENSAL
 // ============================================
 function renderResumoMensal() {
+  if (!obraAtualId) return;
   const now = new Date();
   const mesAtual = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
   const nomeMes = now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
   document.getElementById('dash-mes-nome').textContent = nomeMes;
 
-  const mesReceitas = state.receitas.filter(r => r.data && r.data.startsWith(mesAtual)).reduce((s, r) => s + r.valor, 0);
-  const mesDespesas = state.despesas.filter(d => d.data && d.data.startsWith(mesAtual)).reduce((s, d) => s + d.valor, 0);
-  const mesMaoObra = state.fechamentos.filter(h => h.pagoEm && h.pagoEm.startsWith(mesAtual) && h.status === 'pago').reduce((s, h) => s + (h.valorFinal || 0), 0);
-  const mesVales = state.vales.filter(v => v.data && v.data.startsWith(mesAtual)).reduce((s, v) => s + v.valor, 0);
+  const mesReceitas = filterByObra(state.receitas).filter(r => r.data && r.data.startsWith(mesAtual)).reduce((s, r) => s + r.valor, 0);
+  const mesDespesas = filterByObra(state.despesas).filter(d => d.data && d.data.startsWith(mesAtual)).reduce((s, d) => s + d.valor, 0);
+  const mesMaoObra = filterByObra(state.fechamentos).filter(h => h.pagoEm && h.pagoEm.startsWith(mesAtual) && h.status === 'pago').reduce((s, h) => s + (h.valorFinal || 0), 0);
+  const mesVales = filterByObra(state.vales).filter(v => v.data && v.data.startsWith(mesAtual)).reduce((s, v) => s + v.valor, 0);
   const mesSaldo = mesReceitas - mesDespesas - mesMaoObra;
 
   document.getElementById('dash-mes-receitas').textContent = fmtShort(mesReceitas);
@@ -2490,14 +2531,14 @@ function openHistoricoFunc(funcId) {
 }
 
 function renderHistoricoFunc() {
-  if (!histFuncId) return;
+  if (!histFuncId || !obraAtualId) return;
   const mesFiltro = document.getElementById('hist-func-mes').value;
   const f = getFunc(histFuncId);
-  let pontos = state.pontos.filter(p => p.funcId === histFuncId);
+  let pontos = filterByObra(state.pontos).filter(p => p.funcId === histFuncId);
   if (mesFiltro) pontos = pontos.filter(p => p.data && p.data.startsWith(mesFiltro));
   pontos.sort((a, b) => b.data.localeCompare(a.data));
 
-  let vales = state.vales.filter(v => v.funcId === histFuncId);
+  let vales = filterByObra(state.vales).filter(v => v.funcId === histFuncId);
   if (mesFiltro) vales = vales.filter(v => v.data && v.data.startsWith(mesFiltro));
 
   const diasTrabalhados = pontos.filter(p => p.status === 'trabalhou').length;
@@ -2550,9 +2591,10 @@ function renderHistoricoFunc() {
 // PDF GERAL DA SEMANA
 // ============================================
 function gerarPDFGeral() {
+  if (!obraAtualId) { toast('Selecione uma obra primeiro', 'error'); return; }
   const { start, end } = getWeekDates(state.fechaWeekOffset);
   const nomeEmp = EMPRESA.nome || 'Construtora';
-  const ativos = state.funcionarios.filter(f => f.status === 'ativo');
+  const ativos = filterByObra(state.funcionarios).filter(f => f.status === 'ativo');
 
   let totalGeralBruto = 0, totalGeralVales = 0, totalGeralLiquido = 0;
   const linhasFuncs = ativos.map(f => {
@@ -2571,13 +2613,13 @@ function gerarPDFGeral() {
     </tr>`;
   }).join('');
 
-  const despSemana = state.despesas.filter(d => inWeek(d.data, state.fechaWeekOffset));
+  const despSemana = filterByObra(state.despesas).filter(d => inWeek(d.data, state.fechaWeekOffset));
   const totalDesp = despSemana.reduce((s, d) => s + d.valor, 0);
   const linhasDesp = despSemana.length ? despSemana.map(d =>
     `<tr style="border-bottom:1px solid #eee;"><td style="padding:6px 4px;">${d.descricao}</td><td style="padding:6px 4px; color:#888; font-size:12px;">${d.categoria}</td><td style="padding:6px 4px; text-align:right; color:#e53e3e; font-weight:600;">${fmt(d.valor)}</td></tr>`
   ).join('') : '<tr><td colspan="3" style="padding:12px; text-align:center; color:#aaa;">Nenhuma despesa esta semana</td></tr>';
 
-  const recSemana = state.receitas.filter(r => inWeek(r.data, state.fechaWeekOffset));
+  const recSemana = filterByObra(state.receitas).filter(r => inWeek(r.data, state.fechaWeekOffset));
   const totalRec = recSemana.reduce((s, r) => s + r.valor, 0);
   const linhasRec = recSemana.length ? recSemana.map(r =>
     `<tr style="border-bottom:1px solid #eee;"><td style="padding:6px 4px;">${r.descricao}</td><td style="padding:6px 4px; color:#888; font-size:12px;">${r.categoria}</td><td style="padding:6px 4px; text-align:right; color:#2ecc71; font-weight:600;">${fmt(r.valor)}</td></tr>`
@@ -2650,6 +2692,7 @@ async function initNotificacoes() {
 
 function agendarLembretePagamento() {
   const checarENotificar = () => {
+    if (!obraAtualId) return;
     const agora = new Date();
     const chaveHoje = `notif_pag_${toYMD(agora)}`;
     if (agora.getDay() === 6 && agora.getHours() === 7 && agora.getMinutes() < 5) {
@@ -2668,11 +2711,12 @@ function agendarLembretePagamento() {
 }
 
 function calcTotalPendenteSemana() {
-  const ativos = state.funcionarios.filter(f => f.status === 'ativo');
+  if (!obraAtualId) return 0;
+  const ativos = filterByObra(state.funcionarios).filter(f => f.status === 'ativo');
   const { start, end } = getWeekDates(0);
   const weekKey = toYMD(start) + '_' + toYMD(end);
   return ativos
-    .filter(f => !state.fechamentos.some(h => h.funcId === f.id && h.weekKey === weekKey && h.status === 'pago'))
+    .filter(f => !state.fechamentos.some(h => h.funcId === f.id && h.weekKey === weekKey && h.status === 'pago' && h.obraId === obraAtualId))
     .reduce((s, f) => { const calc = calcFechamento(f.id, 0); return s + calc.valorFinal; }, 0);
 }
 
@@ -2694,6 +2738,25 @@ async function init() {
     state.receitas = receitas;
     state.fechamentos = fechamentos;
     state.obras = obras;
+
+    // Migração automática: se só existe uma obra e há dados sem obraId, associe a essa obra
+    if (state.obras.length === 1) {
+      const obraPadrao = state.obras[0].id;
+      let mudou = false;
+      const arrays = [state.funcionarios, state.pontos, state.vales, state.despesas, state.receitas, state.fechamentos];
+      arrays.forEach(arr => arr.forEach(item => {
+        if (!item.obraId) { item.obraId = obraPadrao; mudou = true; }
+      }));
+      if (mudou) {
+        // salvar as alterações no Firestore
+        for (const item of state.funcionarios) if (item.obraId === obraPadrao) await DB.upsert('funcionarios', item.id, item);
+        for (const item of state.pontos) if (item.obraId === obraPadrao) await DB.upsert('pontos', item.id, item);
+        for (const item of state.vales) if (item.obraId === obraPadrao) await DB.upsert('vales', item.id, item);
+        for (const item of state.despesas) if (item.obraId === obraPadrao) await DB.upsert('despesas', item.id, item);
+        for (const item of state.receitas) if (item.obraId === obraPadrao) await DB.upsert('receitas', item.id, item);
+        for (const item of state.fechamentos) if (item.obraId === obraPadrao) await DB.upsert('fechamentos', item.id, item);
+      }
+    }
   } catch (err) {
     console.error('Erro ao carregar dados:', err);
     toast('Erro ao carregar dados. Verifique sua conexão.', 'error');
@@ -2712,9 +2775,7 @@ async function init() {
       document.getElementById('obra-selector-nome').textContent = 'Criar obra →';
     }
 
-    // Pré-renderiza lista de obras para quando modal abrir
     renderObras();
-
     renderDash();
     updatePontoWeekLabel();
     updateFechaWeekLabel();
